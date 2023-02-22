@@ -5,29 +5,11 @@
 #define in3 6
 #define in4 7
 
-float b = 0.235; // m
-float r = 0.13 / 2; // m
-float omega = 2.5 * M_PI; // rad / s - 64 PWM
-// float omega = 5.0 * M_PI; // rad / s - 128 PWM
-// float omega = 6.6 * M_PI; // rad / s - 255 PWM
+int motorSpeedR = 0;
+int motorSpeedL = 0;
 
-float R = 0.8; // m
-float alpha = M_PI / 18; // rad
-float x = R * sin(alpha); // m
-float y = R * cos(alpha); // m
 
-float theta = atan2(y, x);
-float dtheta = theta;
-float v = x / cos(theta);
 
-float v_L = v - (b / 2) * dtheta;
-float v_R = 2*v - v_L;
-
-float pwm_R = v_R / (0.0026 * M_PI);
-float pwm_L = v_L / (0.0026 * M_PI);
-
-int motorSpeedR = int(pwm_R);
-int motorSpeedL = int(pwm_L);
 
 void setup() {
   pinMode(enR, OUTPUT);
@@ -36,30 +18,45 @@ void setup() {
   pinMode(in2, OUTPUT);
   pinMode(in3, OUTPUT);
   pinMode(in4, OUTPUT);
-  // Serial.begin(9600);
-  // while(!Serial) ;
-  // Serial.println("coords\n");
-  // Serial.println(x);
-  // Serial.println(y);
-  // Serial.println("v_R, v_L\n");
-  // Serial.println(v_R);
-  // Serial.println(v_L);
-  // Serial.println("theta, v\n");
-  // Serial.println(theta);
-  // Serial.println(v);
-  // Serial.println("pwm\n");
-  // Serial.println(pwm_R);
-  // Serial.println(pwm_L);
+  Serial.begin(9600);
 }
 
-void loop() {
-  // Set Motor R backward
-  digitalWrite(in1, HIGH);
-  digitalWrite(in2, LOW);
-  // Set Motor L backward
-  digitalWrite(in3, HIGH);
-  digitalWrite(in4, LOW);
 
-  analogWrite(enR, motorSpeedR);  // Send PWM signal to motor R
-  analogWrite(enL, motorSpeedL);  // Send PWM signal to motor L
+
+void loop() {
+
+  //Parameters and desired radius and speed
+  float b = 0.135;           //m
+  float alpha = 80;          //degrees rotating angle
+  float dt = 0.5;            //seconds
+  float R = 0.2;             //m desired radius of circular path
+  float omega = alpha /dt*2*M_PI/360;   //desired angular speed around the circle
+  float v = omega * (R-0.005); //0.05 accounts for additional mass and friction not modeled in the equation
+
+  //Calculating required speed of right and left motor
+  float v_R = v + b / 2 * omega;
+  float v_L = v - b / 2 * omega;
+
+  int pwm_R = v_R * 437.36 - 100.03;
+  int pwm_L = v_L * 437.36 - 100.03;
+Serial.println(pwm_R);
+Serial.println(pwm_L);
+  if (pwm_R < 0) {
+    pwm_R=0;
+  }
+  else if (pwm_R > 255) {
+    pwm_R=255;
+  }
+
+int motorSpeedR = pwm_R;
+int motorSpeedL = pwm_L;
+// Set Motor R backward
+digitalWrite(in1, LOW);
+digitalWrite(in2, HIGH);
+// Set Motor L backward
+digitalWrite(in3, LOW);
+digitalWrite(in4, HIGH);
+
+analogWrite(enR, motorSpeedR);  // Send PWM signal to motor R
+analogWrite(enL, motorSpeedL);  // Send PWM signal to motor L
 }
